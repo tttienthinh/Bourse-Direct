@@ -8,11 +8,11 @@ import sys
 import re 
 
 """
-This code scrape all data about etf from justetf.com/uk
+This code scrape all data about etf from justetf.com/fr
 """
 
 # Constant defining
-URL = 'https://www.justetf.com/uk/etf-profile.html?isin={0}'
+URL = 'https://www.justetf.com/fr/etf-profile.html?isin={0}'
 
 # Main dataframe
 df = pd.read_csv("ISIN.txt", names=["ISIN"])
@@ -29,7 +29,7 @@ def scrape_etf_params(response):
 
     etf['name'] = find('h1', 'id', 'etf-title')
     etf['ticker'] = find('span', 'id', 'etf-second-id')
-
+    
     try:
         etf_data_table_list = response.findAll('table', {'class': 'table etf-data-table'})
     except:
@@ -97,11 +97,23 @@ len(df.dropna())
 df = df.dropna()
 
 # Expense to float
-def convert_expense2float(expense):
-    all_matches = re.findall(".*%", expense)
-    return float(all_matches[0][:-1])
+def convert_percent2float(expense):
+    if not isinstance(expense, str):
+        return expense
+    expense = expense.replace(",", "")
+    try:
+        all_matches = re.split("%", expense)
+        return float(all_matches[0])
+    except:
+        return expense
 
-df.expense = df.expense.map(convert_expense2float)
+convert_percent2float("-654.6")
+
+liste2convert = "expense,YTD,1m_return,3m_return,6m_return,1y_return,3y_return,5y_return,max_return,2022_return,2021_return,2020_return,2019_return,vol_1y,vol_3y,vol_5y,sharpe_1y,sharpe_3y,sharpe_5y,maxdrawdown_1y,maxdrawdown_3y,maxdrawdown_5y,maxdrawdown"
+liste2convert = liste2convert.split(",")
+for col2convert in liste2convert:
+    df[col2convert] = df[col2convert].map(convert_percent2float)
+
 
 # fund_size to float
 def convert_fundsize2float(fund_size):
